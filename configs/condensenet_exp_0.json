@@ -7,7 +7,7 @@
   "seed": 1337,
 
   "img_size": 32,
-  "num_channels": 3,
+  "input_channels": 3,
 
   "num_classes": 10,
 
@@ -18,10 +18,12 @@
 
   "stages": [14,14,14],
   "growth_rate": [8,16,32],
-  "LCG_bottleneck": 4,
+  "conv_bottleneck": 4,
   "group1x1": 4,
   "group3x3": 4,
   "condense_factor": 4,
+  "init_stride": 1,
+  "pool_size": 8,
 
   "batch_size": 64,
   "max_epoch": 300,
@@ -43,6 +45,5 @@
   "y_valid": "y_trainval.npy",
   "x_test": "x_val.npy",
   "y_test": "y_val.npy"
-
 
 }
