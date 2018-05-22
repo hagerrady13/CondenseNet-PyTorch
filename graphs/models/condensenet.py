@@ -39,15 +39,15 @@ class CondenseNet(nn.Module):
 
         self.init_conv = nn.Conv2d(in_channels=self.config.input_channels, out_channels=self.num_filters, kernel_size=3, stride=self.init_stride, padding=1, bias=False)
 
-        self.denseblock_one = DenseBlock(num_layers=self.stages[0], in_channels= self.num_filters, growth_rate=self.growth_rate[0])
+        self.denseblock_one = DenseBlock(num_layers=self.stages[0], in_channels= self.num_filters, growth_rate=self.growth_rate[0], config=self.config)
 
         self.num_filters += self.stages[0] * self.growth_rate[0]
 
-        self.denseblock_two = DenseBlock(num_layers=self.stages[1], in_channels= self.num_filters, growth_rate=self.growth_rate[1])
+        self.denseblock_two = DenseBlock(num_layers=self.stages[1], in_channels= self.num_filters, growth_rate=self.growth_rate[1], config=self.config)
 
         self.num_filters += self.stages[1] * self.growth_rate[1]
 
-        self.denseblock_three = DenseBlock(num_layers=self.stages[2], in_channels= self.num_filters, growth_rate=self.growth_rate[2])
+        self.denseblock_three = DenseBlock(num_layers=self.stages[2], in_channels= self.num_filters, growth_rate=self.growth_rate[2], config=self.config)
 
         self.num_filters += self.stages[2] * self.growth_rate[2]
         self.last_bn = nn.BatchNorm2d(self.num_filters)
@@ -73,7 +73,7 @@ class CondenseNet(nn.Module):
         out = self.relu(out)
         out = self.last_pool(out)
 
-        out = self.view(out.size(0), -1)
+        out = out.view(out.size(0), -1)
 
         out = self.classifier(out)
 
@@ -110,4 +110,14 @@ Model Architecture:
 
 Input: (N, 3, 32, 32)
 
+Conv2D(3, 16, 3, stride=1,padding=1) ->
+DenseBlock(num_layers=14, in_channels=16, growth_rate=8)
+AvgPool(2,2)
+DenseBlock(num_layers=14, in_channels=128, growth_rate=16)
+AvgPool(2,2)
+DenseBlock(num_layers=14, in_channels=352, growth_rate=32)
+BatchNorm(352)
+ReLU
+AvgPool(8)
+Linear(800, 10)
 """

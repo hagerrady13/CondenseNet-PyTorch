@@ -3,7 +3,7 @@
   "agent": "CondenseNetAgent",
   "mode": "train",
 
-  "cuda": true,
+  "cuda": 0,
   "seed": 1337,
 
   "img_size": 32,
@@ -24,6 +24,7 @@
   "condense_factor": 4,
   "init_stride": 1,
   "pool_size": 8,
+  "dropout_rate": 0,
 
   "batch_size": 64,
   "max_epoch": 300,

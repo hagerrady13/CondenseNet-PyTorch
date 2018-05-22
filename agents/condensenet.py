@@ -11,14 +11,16 @@ from torch.autograd import Variable
 from graphs.models.condensenet import CondenseNet
 from graphs.losses.loss import CrossEntropyLoss2d
 from datasets.cifar10 import Cifar10DataLoader
-from graphs.weights_initializer import get_parameters
 
 from tensorboardX import SummaryWriter
-from utils.metrics import AverageMeter, AverageMeterList, evaluate
+from utils.metrics import AverageMeter, AverageMeterList, evaluate, calc_accuracy
 from utils.misc import print_cuda_statistics
+from utils.train_utils import adjust_learning_rate
 
 cudnn.benchmark = True
 
+#TODO #1: Group Lasso Loss
+#TODO: add learning rate to stateDict when loading and saving
 
 class CondenseNetAgent:
     """
@@ -28,18 +30,16 @@ class CondenseNetAgent:
     def __init__(self, config):
         self.config = config
         # Create an instance from the Model
-
+        self.model = CondenseNet(self.config)
+        print(self.model)
         # Create an instance from the data loader
         self.data_loader = Cifar10DataLoader(self.config)
         # Create instance from the loss
         self.loss = CrossEntropyLoss2d()
         # Create instance from the optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config.learning_rate,
-                                          weight_decay=self.config.weight_decay)
-
-        # self.optimizer = torch.optim.SGD(self.model.parameters(),
-        #                                  lr=self.config.learning_rate,
-        #                                  momentum=self.config.momentum,weight_decay=self.config.weight_decay)
+        self.optimizer = torch.optim.SGD(self.model.parameters(),
+                                         lr=self.config.learning_rate,
+                                         momentum=self.config.momentum,weight_decay=self.config.weight_decay, nesterov=True)
         # initialize my counters
         self.current_epoch = 0
         self.current_iteration = 0
@@ -69,10 +69,7 @@ class CondenseNetAgent:
         self.load_checkpoint(self.config.checkpoint_file)
 
         # Tensorboard Writer
-        # TODO check graph visualization in tensorboardX (((DONE)))
-        self.summary_writer = SummaryWriter(log_dir=self.config.summary_dir, comment='FCN8s')
-        # dummy_input = Variable(torch.rand(1, 3, 224, 224))
-        # self.summary_writer.add_graph(self.model, dummy_input)
+        self.summary_writer = SummaryWriter(log_dir=self.config.summary_dir, comment='CondenseNet')
 
     def save_checkpoint(self, filename='checkpoint.pth.tar', is_best=0):
         """
@@ -82,7 +79,7 @@ class CondenseNetAgent:
         :return:
         """
         state = {
-            'epoch': self.current_epoch + 1,
+            'epoch': self.current_epoch,
             'iteration': self.current_iteration,
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
@@ -147,22 +144,26 @@ class CondenseNetAgent:
         tqdm_batch = tqdm(self.data_loader.train_loader, total=self.data_loader.train_iterations,
                           desc="Epoch-{}-".format(self.current_epoch))
 
-        # Set the model to be in training mode (for batchnorm)
-        self.vgg_model.train()
+        # Set the model to be in training mode
         self.model.train()
         # Initialize your average meters
         epoch_loss = AverageMeter()
         epoch_acc = AverageMeter()
         epoch_mean_iou = AverageMeter()
-        epoch_iou_class = AverageMeterList(self.config.num_classes)
+        top1_acc = AverageMeter()
+        top5_acc = AverageMeter()
 
+        current_batch = 0
         for x, y in tqdm_batch:
             if self.cuda:
                 x, y = x.cuda(async=self.config.async_loading), y.cuda(async=self.config.async_loading)
 
+            progress = float(self.current_epoch * self.data_loader.train_iterations + current_batch) / (self.config.max_epoch * self.data_loader.train_iterations)
+
             x, y = Variable(x), Variable(y)
+            lr = adjust_learning_rate(self.optimizer, self.current_epoch, self.config, batch=current_batch, nBatch= self.data_loader.train_iterations)
             # model
-            pred = self.model(x)
+            pred = self.model(x, progress)
             # loss
             cur_loss = self.loss(pred, y)
             if np.isnan(float(cur_loss.cpu().data[0])):
@@ -174,25 +175,25 @@ class CondenseNetAgent:
             self.optimizer.step()
 
             _, pred_max = torch.max(pred, 1)
-            acc, _, mean_iou, iou, _ = evaluate(pred_max.cpu().data.numpy(), y.cpu().data.numpy(),
+            acc, _, mean_iou, _, _ = evaluate(pred_max.cpu().data.numpy(), y.cpu().data.numpy(),
                                                 self.config.num_classes)
+            top1, top5 = calc_accuracy(pred.data, y.data, topk=(1,5))
 
             epoch_loss.update(cur_loss.data[0])
             epoch_acc.update(acc)
             epoch_mean_iou.update(mean_iou)
-            epoch_iou_class.update(iou)
+            top1_acc.update(top1)
+            top5_acc.update(top5)
 
             self.current_iteration += 1
+            current_batch += 1
 
         self.summary_writer.add_scalar("epoch/loss", epoch_loss.val, self.current_iteration)
         self.summary_writer.add_scalar("epoch/accuracy", epoch_acc.val, self.current_iteration)
-        self.summary_writer.add_scalar("epoch/mean_iou", epoch_mean_iou.val, self.current_iteration)
         tqdm_batch.close()
 
         print("Training at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
-            epoch_loss.val) + " - acc-: " + str(
-            epoch_acc.val) + "- mean_iou: " + str(epoch_mean_iou.val) + "- iou per class: " + str(
-            epoch_iou_class.val))
+            epoch_loss.val) + " - acc-: " + str(epoch_acc.val) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
 
     def validate(self):
         """
@@ -203,13 +204,13 @@ class CondenseNetAgent:
                           desc="Valiation at -{}-".format(self.current_epoch))
 
         # set the model in training mode
-        self.vgg_model.eval()
         self.model.eval()
 
         epoch_loss = AverageMeter()
         epoch_acc = AverageMeter()
         epoch_mean_iou = AverageMeter()
-        epoch_iou_class = AverageMeterList(self.config.num_classes)
+        top1_acc = AverageMeter()
+        top5_acc = AverageMeter()
 
         for x, y in tqdm_batch:
             if self.cuda:
@@ -224,18 +225,19 @@ class CondenseNetAgent:
                 raise ValueError('Loss is nan during training...')
 
             _, pred_max = torch.max(pred, 1)
-            acc, _, mean_iou, iou, _ = evaluate(pred_max.cpu().data.numpy(), y.cpu().data.numpy(),
+            acc, _, mean_iou, _, _ = evaluate(pred_max.cpu().data.numpy(), y.cpu().data.numpy(),
                                                 self.config.num_classes)
+
+            top1, top5 = calc_accuracy(pred.data, y.data, topk=(1,5))
 
             epoch_loss.update(cur_loss.data[0])
             epoch_acc.update(acc)
             epoch_mean_iou.update(mean_iou)
-            epoch_iou_class.update(iou)
+            top1_acc.update(top1)
+            top5_acc.update(top5)
 
-        print("Validation Results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
-            epoch_loss.val) + " - acc-: " + str(
-            epoch_acc.val) + "- mean_iou: " + str(epoch_mean_iou.val) + "- iou per class: " + str(
-            epoch_iou_class.val))
+        print("Validation results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
+            epoch_loss.val) + " - acc-: " + str(epoch_acc.val) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
 
         tqdm_batch.close()
 

@@ -7,16 +7,15 @@ from graphs.models.layers import LearnedGroupConv
 
 class DenseBlock(nn.Sequential):
     def __init__(self, num_layers, in_channels, growth_rate, config):
-        super(DenseBlock).__init__()
+        super().__init__()
 
         for layer_id in range(num_layers):
             layer = DenseLayer(in_channels=in_channels + (layer_id * growth_rate), growth_rate=growth_rate, config=config)
             self.add_module('dense_layer_%d' % (layer_id + 1), layer)
 
-
 class DenseLayer(nn.Module):
     def __init__(self, in_channels, growth_rate, config):
-        super(DenseLayer).__init__()
+        super().__init__()
         self.config = config
         self.conv_bottleneck = self.config.conv_bottleneck
         self.group1x1 = self.config.group1x1
@@ -41,3 +40,10 @@ class DenseLayer(nn.Module):
         out = self.conv_2(out)
 
         return torch.cat([x, out], 1)
+
+"""
+DenseBlocks:
+1-> 14 dense layers
+2-> 14 dense layers
+3-> 14 dense layers
+"""
