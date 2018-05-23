@@ -1,11 +1,10 @@
 """
-FCN8s Model with VGG16 encoder
-name: fcn8s.py
-date: April 2018
+CondenseNet Model
+name: condensenet.py
+date: May 2018
 """
 import torch
 import torch.nn as nn
-import cv2
 import json
 from easydict import EasyDict as edict
 import numpy as np

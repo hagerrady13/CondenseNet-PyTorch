@@ -3,7 +3,7 @@
   "agent": "CondenseNetAgent",
   "mode": "train",
 
-  "cuda": 0,
+  "cuda": 1,
   "seed": 1337,
 
   "img_size": 32,

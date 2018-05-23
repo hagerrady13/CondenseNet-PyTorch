@@ -31,7 +31,7 @@ class CondenseNetAgent:
         self.config = config
         # Create an instance from the Model
         self.model = CondenseNet(self.config)
-        print(self.model)
+        #print(self.model)
         # Create an instance from the data loader
         self.data_loader = Cifar10DataLoader(self.config)
         # Create instance from the loss
@@ -39,7 +39,7 @@ class CondenseNetAgent:
         # Create instance from the optimizer
         self.optimizer = torch.optim.SGD(self.model.parameters(),
                                          lr=self.config.learning_rate,
-                                         momentum=self.config.momentum,
+                                         momentum=float(self.config.momentum),
                                          weight_decay=self.config.weight_decay,
                                          nesterov=True)
         # initialize my counters
@@ -60,8 +60,7 @@ class CondenseNetAgent:
             torch.cuda.manual_seed_all(self.config.seed)
             print_cuda_statistics()
 
-            # Get my models to run on CUDA
-            self.vgg_model = self.vgg_model.cuda()
+            # Get my models to run on CUD
             self.model = self.model.cuda()
             self.loss = self.loss.cuda()
         else:
