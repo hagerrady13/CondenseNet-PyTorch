@@ -34,7 +34,7 @@ class CondenseNet(nn.Module):
         """
         self.transition_pool = nn.AvgPool2d(kernel_size=2, stride=2)
 
-        self.last_pool = nn.AvgPool2d(self.pool_size)
+        self.pool = nn.AvgPool2d(self.pool_size)
         self.relu = nn.ReLU(inplace=True)
 
         self.init_conv = nn.Conv2d(in_channels=self.config.input_channels, out_channels=self.num_filters, kernel_size=3, stride=self.init_stride, padding=1, bias=False)
@@ -50,7 +50,7 @@ class CondenseNet(nn.Module):
         self.denseblock_three = DenseBlock(num_layers=self.stages[2], in_channels= self.num_filters, growth_rate=self.growth_rate[2], config=self.config)
 
         self.num_filters += self.stages[2] * self.growth_rate[2]
-        self.last_bn = nn.BatchNorm2d(self.num_filters)
+        self.batch_norm = nn.BatchNorm2d(self.num_filters)
 
         self.classifier = nn.Linear(self.num_filters, self.num_classes)
 
@@ -60,64 +60,40 @@ class CondenseNet(nn.Module):
         if progress:
             LearnedGroupConv.global_progress = progress
 
-        out = self.init_conv(x)
+        x = self.init_conv(x)
 
-        out = self.denseblock_one(out)
-        out = self.transition_pool(out)
+        x = self.denseblock_one(x)
+        x = self.transition_pool(x)
 
-        out = self.denseblock_two(out)
-        out = self.transition_pool(out)
+        x = self.denseblock_two(x)
+        x = self.transition_pool(x)
 
-        out = self.denseblock_three(out)
-        out = self.last_bn(out)
-        out = self.relu(out)
-        out = self.last_pool(out)
+        x = self.denseblock_three(x)
+        x = self.batch_norm(x)
+        x = self.relu(x)
+        x = self.pool(x)
 
-        out = out.view(out.size(0), -1)
+        x = x.view(x.size(0), -1)
 
-        out = self.classifier(out)
+        out = self.classifier(x)
 
         return out
-
-"""
-Testing model
-"""
-def load_image(img_path, image_size):
-    img = cv2.imread(img_path)
-    print ("Original Image shape: " ,img.shape)
-    img = cv2.resize(img, (image_size, image_size))
-    print ("Reshaped Image: ", img.shape)
-
-    return img
-
-def main():
-    config = json.load(open('../../configs/condensenet_exp_0.json'))
-    config = edict(config)
-
-    inp = load_image(config.test_image, config.img_size)
-    inp = np.swapaxes(inp,0,2)
-    inp = np.expand_dims(inp, axis=0)
-
-    inp = torch.autograd.Variable(torch.from_numpy(inp).float())
-
-if __name__ == '__main__':
-    main()
 
 """
 #########################
 Model Architecture:
 #########################
 
-Input: (N, 3, 32, 32)
+Input: (N, 32, 32, 3)
 
-Conv2D(3, 16, 3, stride=1,padding=1) ->
+- Conv2d(3, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
 DenseBlock(num_layers=14, in_channels=16, growth_rate=8)
-AvgPool(2,2)
+- AvgPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=False, count_include_pad=True)
 DenseBlock(num_layers=14, in_channels=128, growth_rate=16)
-AvgPool(2,2)
+- AvgPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=False, count_include_pad=True)
 DenseBlock(num_layers=14, in_channels=352, growth_rate=32)
-BatchNorm(352)
-ReLU
-AvgPool(8)
-Linear(800, 10)
+- BatchNorm2d(800, eps=1e-05, momentum=0.1, affine=True)
+- ReLU(inplace)
+- AvgPool2d(kernel_size=8, stride=8, padding=0, ceil_mode=False, count_include_pad=True)
+- Linear(in_features=800, out_features=10, bias=True)
 """

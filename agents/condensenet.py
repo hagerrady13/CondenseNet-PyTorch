@@ -19,8 +19,8 @@ from utils.train_utils import adjust_learning_rate
 
 cudnn.benchmark = True
 
-#TODO #1: Group Lasso Loss
-#TODO: add learning rate to stateDict when loading and saving
+#TODO #2: Group Lasso Loss
+#TODO #3: Count number of flops
 
 class CondenseNetAgent:
     """
@@ -39,11 +39,13 @@ class CondenseNetAgent:
         # Create instance from the optimizer
         self.optimizer = torch.optim.SGD(self.model.parameters(),
                                          lr=self.config.learning_rate,
-                                         momentum=self.config.momentum,weight_decay=self.config.weight_decay, nesterov=True)
+                                         momentum=self.config.momentum,
+                                         weight_decay=self.config.weight_decay,
+                                         nesterov=True)
         # initialize my counters
         self.current_epoch = 0
         self.current_iteration = 0
-        self.best_valid_mean_iou = 0
+        self.best_valid_acc = 0
 
         # Check is cuda is available or not
         self.is_cuda = torch.cuda.is_available()
@@ -130,10 +132,10 @@ class CondenseNetAgent:
             self.current_epoch = epoch
             self.train_one_epoch()
 
-            valid_mean_iou = self.validate()
-            is_best = valid_mean_iou > self.best_valid_mean_iou
+            valid_acc = self.validate()
+            is_best = valid_acc > self.best_valid_acc
             if is_best:
-                self.best_valid_mean_iou = valid_mean_iou
+                self.best_valid_acc = valid_acc
             self.save_checkpoint(is_best=is_best)
 
     def train_one_epoch(self):
@@ -158,8 +160,9 @@ class CondenseNetAgent:
             if self.cuda:
                 x, y = x.cuda(async=self.config.async_loading), y.cuda(async=self.config.async_loading)
 
+            # current iteration over total iterations
             progress = float(self.current_epoch * self.data_loader.train_iterations + current_batch) / (self.config.max_epoch * self.data_loader.train_iterations)
-
+            #progress = float(self.current_iteration) / (self.config.max_epoch * self.data_loader.train_iterations)
             x, y = Variable(x), Variable(y)
             lr = adjust_learning_rate(self.optimizer, self.current_epoch, self.config, batch=current_batch, nBatch= self.data_loader.train_iterations)
             # model
@@ -168,7 +171,6 @@ class CondenseNetAgent:
             cur_loss = self.loss(pred, y)
             if np.isnan(float(cur_loss.cpu().data[0])):
                 raise ValueError('Loss is nan during training...')
-
             # optimizer
             self.optimizer.zero_grad()
             cur_loss.backward()
@@ -241,7 +243,7 @@ class CondenseNetAgent:
 
         tqdm_batch.close()
 
-        return epoch_mean_iou.val
+        return top1_acc.val
 
     def finalize(self):
         """

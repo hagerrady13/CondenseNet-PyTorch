@@ -46,10 +46,10 @@ class Cifar10DataLoader:
             self.test_iterations = (self.len_test_data + self.config.batch_size - 1) // self.config.batch_size
 
             print("""
-Some Statistics about the testing data
-test_data shape: {}, type: {}
-test_labels shape: {}, type: {}
-test_iterations: {}
+                Some Statistics about the testing data
+                test_data shape: {}, type: {}
+                test_labels shape: {}, type: {}
+                test_iterations: {}
             """.format(test_data.size(), test_data.type(), test_labels.size(), test_labels.type(),
                        self.test_iterations))
 
