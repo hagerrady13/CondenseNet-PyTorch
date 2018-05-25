@@ -58,8 +58,8 @@ class Cifar10DataLoader:
             self.test_loader = DataLoader(test, batch_size=config.batch_size, shuffle=False)
 
         elif config.data_mode == "random":
-            train_data = torch.randn(8, self.config.input_channels, self.config.img_size, self.config.img_size)
-            train_labels = torch.ones(8).long()
+            train_data = torch.randn(self.config.batch_size, self.config.input_channels, self.config.img_size, self.config.img_size)
+            train_labels = torch.ones(self.config.batch_size).long()
             valid_data = train_data
             valid_labels = train_labels
             self.len_train_data = train_data.size()[0]

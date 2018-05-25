@@ -38,7 +38,7 @@
   "pin_memory": true,
   "async_loading": true,
 
-  "data_mode": "numpy_train",
+  "data_mode": "random",
   "data_folder": "./data/cifar10/numpy/",
   "x_train": "x_train.npy",
   "y_train": "y_train.npy",

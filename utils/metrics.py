@@ -79,7 +79,7 @@ class AverageMeterList:
     def val(self):
         return self.avg
 
-def calc_accuracy(output, target, topk=(1,)):
+def cls_accuracy(output, target, topk=(1,)):
     maxk = max(topk)
     batch_size = target.size(0)
 
@@ -90,5 +90,5 @@ def calc_accuracy(output, target, topk=(1,)):
     res = []
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(0)
-        res.append(correct_k.mul_(100.0 / batch_size))
+        res.append(correct_k / batch_size)
     return res

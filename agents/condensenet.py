@@ -13,7 +13,7 @@ from graphs.losses.loss import CrossEntropyLoss2d
 from datasets.cifar10 import Cifar10DataLoader
 
 from tensorboardX import SummaryWriter
-from utils.metrics import AverageMeter, AverageMeterList, evaluate, calc_accuracy
+from utils.metrics import AverageMeter, AverageMeterList, evaluate, cls_accuracy
 from utils.misc import print_cuda_statistics
 from utils.train_utils import adjust_learning_rate
 
@@ -149,8 +149,6 @@ class CondenseNetAgent:
         self.model.train()
         # Initialize your average meters
         epoch_loss = AverageMeter()
-        epoch_acc = AverageMeter()
-        epoch_mean_iou = AverageMeter()
         top1_acc = AverageMeter()
         top5_acc = AverageMeter()
 
@@ -175,26 +173,21 @@ class CondenseNetAgent:
             cur_loss.backward()
             self.optimizer.step()
 
-            _, pred_max = torch.max(pred, 1)
-            acc, _, mean_iou, _, _ = evaluate(pred_max.cpu().data.numpy(), y.cpu().data.numpy(),
-                                                self.config.num_classes)
-            top1, top5 = calc_accuracy(pred.data, y.data, topk=(1,5))
+            top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
 
             epoch_loss.update(cur_loss.data[0])
-            epoch_acc.update(acc)
-            epoch_mean_iou.update(mean_iou)
-            top1_acc.update(top1)
-            top5_acc.update(top5)
+            top1_acc.update(top1.numpy()[0], x.size(0))
+            top5_acc.update(top5.numpy()[0], x.size(0))
 
             self.current_iteration += 1
             current_batch += 1
 
-        self.summary_writer.add_scalar("epoch/loss", epoch_loss.val, self.current_iteration)
-        self.summary_writer.add_scalar("epoch/accuracy", epoch_acc.val, self.current_iteration)
+            self.summary_writer.add_scalar("epoch/loss", epoch_loss.val, self.current_iteration)
+            self.summary_writer.add_scalar("epoch/accuracy", top1_acc.val, self.current_iteration)
         tqdm_batch.close()
 
         print("Training at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
-            epoch_loss.val) + " - acc-: " + str(epoch_acc.val) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
+            epoch_loss.val) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
 
     def validate(self):
         """
@@ -208,8 +201,6 @@ class CondenseNetAgent:
         self.model.eval()
 
         epoch_loss = AverageMeter()
-        epoch_acc = AverageMeter()
-        epoch_mean_iou = AverageMeter()
         top1_acc = AverageMeter()
         top5_acc = AverageMeter()
 
@@ -225,24 +216,17 @@ class CondenseNetAgent:
             if np.isnan(float(cur_loss.data[0])):
                 raise ValueError('Loss is nan during training...')
 
-            _, pred_max = torch.max(pred, 1)
-            acc, _, mean_iou, _, _ = evaluate(pred_max.cpu().data.numpy(), y.cpu().data.numpy(),
-                                                self.config.num_classes)
-
-            top1, top5 = calc_accuracy(pred.data, y.data, topk=(1,5))
-
+            top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
             epoch_loss.update(cur_loss.data[0])
-            epoch_acc.update(acc)
-            epoch_mean_iou.update(mean_iou)
-            top1_acc.update(top1)
-            top5_acc.update(top5)
+            top1_acc.update(top1.numpy()[0], x.size(0))
+            top5_acc.update(top5.numpy()[0], x.size(0))
 
         print("Validation results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
-            epoch_loss.val) + " - acc-: " + str(epoch_acc.val) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
+            epoch_loss.avg) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
 
         tqdm_batch.close()
 
-        return top1_acc.val
+        return top1_acc.avg
 
     def finalize(self):
         """
