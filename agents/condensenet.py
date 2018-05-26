@@ -176,8 +176,8 @@ class CondenseNetAgent:
             top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
 
             epoch_loss.update(cur_loss.data[0])
-            top1_acc.update(top1.numpy()[0], x.size(0))
-            top5_acc.update(top5.numpy()[0], x.size(0))
+            top1_acc.update(top1.cpu().numpy()[0], x.size(0))
+            top5_acc.update(top5.cpu().numpy()[0], x.size(0))
 
             self.current_iteration += 1
             current_batch += 1
@@ -218,8 +218,8 @@ class CondenseNetAgent:
 
             top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
             epoch_loss.update(cur_loss.data[0])
-            top1_acc.update(top1.numpy()[0], x.size(0))
-            top5_acc.update(top5.numpy()[0], x.size(0))
+            top1_acc.update(top1.cpu().numpy()[0], x.size(0))
+            top5_acc.update(top5.cpu().numpy()[0], x.size(0))
 
         print("Validation results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
             epoch_loss.avg) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))

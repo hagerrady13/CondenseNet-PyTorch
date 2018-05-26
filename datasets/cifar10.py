@@ -35,7 +35,7 @@ class Cifar10DataLoader:
             self.valid_loader = DataLoader(valid_set, batch_size=self.config.batch_size, shuffle=False)
 
             self.train_iterations = len(self.train_loader)
-            self.valid_loader = len(self.valid_loader)
+            self.valid_iterations = len(self.valid_loader)
 
         elif config.data_mode == "numpy_test":
             test_data = torch.from_numpy(np.load(config.data_folder + config.x_test)).float()
