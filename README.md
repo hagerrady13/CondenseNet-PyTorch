@@ -27,6 +27,19 @@ Dataloader is resonsible for downloading (first time only) and preparing cifar10
 
 ### Model:
 To be able to reproduce the results from the official implementation, we use the defualt model of cifar10 and its configs.
+| CondenseNet                | Feature map     |
+| -------------------------- |:---------------:|
+| 3x3 Conv (stride =1)       |     32x32       |
+| {1x1 L-Conv   (k=8)        |                 |
+|  3x3 G-Conv} x 14          |     32x32       |
+| 2×2 average pool, stride 2 |     16x16       |
+| {1x1 L-Conv   (k=16)       |                 |
+| 3x3 G-Conv} x 14           |     16x16       |
+| 2×2 average pool, stride 2 |      8x8        |
+| {1x1 L-Conv   (k=32)       |      8x8        |
+| 3x3 G-Conv} x 14           |                 |
+| 8x8 global average pool    |      1x1        |
+| 10-dim fully-connected     |                 |
 
 ### Experiment configs:
 ```
@@ -40,11 +53,15 @@ To be able to reproduce the results from the official implementation, we use the
 - Growth Rate: [8, 16, 32]
 ```
 ### Usage:
-- To run the project, you need to add your configurations into the folder configs/. An example of the configurations that should be passed can be found [here](https://github.com/hagerrady13/DCGAN-Pytorch/blob/master/configs/condensenet_exp_0.json)
+- To run the project, you need to add your configurations into the folder configs/. An example of the configurations that should be passed can be found [here](https://github.com/hagerrady13/CondenseNet-Pytorch/blob/master/configs/condensenet_exp_0.json)
 - ``` sh run.sh ```
 - To run on a GPU, you need to enable cuda in the config file.
 
 ### Results:
+| Metric       | Official     |  Reproduced
+| ------------ |:------------:|------------
+| Top1 error   |              |
+| Top5 error   |              |
 
 ### Requirements:
 - Pytorch: 0.3.1
