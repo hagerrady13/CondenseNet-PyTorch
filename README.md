@@ -27,6 +27,7 @@ Dataloader is resonsible for downloading (first time only) and preparing cifar10
 
 ### Model:
 To be able to reproduce the results from the official implementation, we use the defualt model of cifar10 and its configs.
+
 | CondenseNet                | Feature map     |
 | -------------------------- |:---------------:|
 | 3x3 Conv (stride =1)       |     32x32       |
@@ -34,10 +35,10 @@ To be able to reproduce the results from the official implementation, we use the
 |  3x3 G-Conv} x 14          |     32x32       |
 | 2×2 average pool, stride 2 |     16x16       |
 | {1x1 L-Conv   (k=16)       |                 |
-| 3x3 G-Conv} x 14           |     16x16       |
+| 3x3 G-Conv}  x 14          |     16x16       |
 | 2×2 average pool, stride 2 |      8x8        |
 | {1x1 L-Conv   (k=32)       |      8x8        |
-| 3x3 G-Conv} x 14           |                 |
+| 3x3 G-Conv}  x 14          |                 |
 | 8x8 global average pool    |      1x1        |
 | 10-dim fully-connected     |                 |
 
@@ -47,7 +48,6 @@ To be able to reproduce the results from the official implementation, we use the
 - Batch size: 64
 - Learning rate: 0.1 following a consine type
 - Optimizer: SGD
-- Betas for Adam: 0.5 and 0.999
 - Number of epochs: 300
 - Condensation Stages: [14, 14, 14]
 - Growth Rate: [8, 16, 32]
@@ -60,8 +60,8 @@ To be able to reproduce the results from the official implementation, we use the
 ### Results:
 | Metric       | Official     |  Reproduced
 | ------------ |:------------:|------------
-| Top1 error   |              |
-| Top5 error   |              |
+| Top1 error   |              |   4.78%
+| Top5 error   |              |   0.15%
 
 ### Requirements:
 - Pytorch: 0.3.1
