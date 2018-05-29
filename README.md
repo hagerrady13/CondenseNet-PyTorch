@@ -23,22 +23,19 @@ A pytorch implementation of [CondenseNet: An Efficient DenseNet using Learned Gr
 ```
 
 ### Data:
-Dataloader is resonsible for downloading (first time only) and preparing cifar10 data. 
+Dataloader is responsible for downloading (first time only) and preparing cifar10 data. 
 
 ### Model:
-To be able to reproduce the results from the official implementation, we use the defualt model of cifar10 and its configs.
+To be able to reproduce the results from the official implementation, we use the default model of cifar10 and its configs.
 
 | CondenseNet                | Feature map     |
 | -------------------------- |:---------------:|
 | 3x3 Conv (stride =1)       |     32x32       |
-| {1x1 L-Conv   (k=8)        |                 |
-|  3x3 G-Conv} x 14          |     32x32       |
+|![](./utils/assets/CodeCogsEqn1.png)|     32x32       |
 | 2×2 average pool, stride 2 |     16x16       |
-| {1x1 L-Conv   (k=16)       |                 |
-| 3x3 G-Conv}  x 14          |     16x16       |
+|![](./utils/assets/CodeCogsEqn2.png)|     16x16       |
 | 2×2 average pool, stride 2 |      8x8        |
-| {1x1 L-Conv   (k=32)       |      8x8        |
-| 3x3 G-Conv}  x 14          |                 |
+|![](./utils/assets/CodeCogsEqn3.png)|      8x8        |
 | 8x8 global average pool    |      1x1        |
 | 10-dim fully-connected     |                 |
 
