@@ -18,6 +18,7 @@ A pytorch implementation of [CondenseNet: An Efficient DenseNet using Learned Gr
 ├── data
 |  └── cifar10  # contains raw dataset
 ├── utils # utilities folder containing metrics , config parsing, etc
+|  └── assets
 ├── main.py
 ├── run.sh
 ```
@@ -26,7 +27,7 @@ A pytorch implementation of [CondenseNet: An Efficient DenseNet using Learned Gr
 Dataloader is responsible for downloading (first time only) and preparing cifar10 data. 
 
 ### Model:
-To be able to reproduce the results from the official implementation, we use the default model of cifar10 and its configs.
+To be able to reproduce the results from the official implementation, we use the default model of cifar10 and its configs as given [here](https://github.com/ShichenLiu/CondenseNet)
 
 | CondenseNet                | Feature map     |
 | -------------------------- |:---------------:|
@@ -50,21 +51,27 @@ To be able to reproduce the results from the official implementation, we use the
 - Growth Rate: [8, 16, 32]
 ```
 ### Usage:
-- To run the project, you need to add your configurations into the folder configs/. An example of the configurations that should be passed can be found [here](https://github.com/hagerrady13/CondenseNet-Pytorch/blob/master/configs/condensenet_exp_0.json)
+- To run the project, you need to add your configurations into the folder ```configs/``` as found here [here](https://github.com/hagerrady13/CondenseNet-Pytorch/blob/master/configs/condensenet_exp_0.json)
 - ``` sh run.sh ```
 - To run on a GPU, you need to enable cuda in the config file.
 
 ### Results:
-| Metric       | Official     |  Reproduced
-| ------------ |:------------:|------------
-| Top1 error   |              |   4.78%
-| Top5 error   |              |   0.15%
+| Metric       | Reproduced  | Official    |
+| ------------ |:-----------:|:-----------:|
+| Top1 error   |    4.78%    |             |
+| Top5 error   |    0.15%    |             |
 
 ### Requirements:
 - Pytorch: 0.3.1
 - torchvision: 0.2.0
 - tensorboardX: 1.1
 
+### ToDo:
+* Add network profiling for FLOPS counting
+* Implement the condensation layers to optimize the model for inference
 
 ### References:
-- CondenseNet official implementation in Pytorch: https://github.com/ShichenLiu/CondenseNet
+* CondenseNet official implementation in Pytorch: https://github.com/ShichenLiu/CondenseNet
+
+### License:
+This project is licensed under MIT License - see the LICENSE file for details.

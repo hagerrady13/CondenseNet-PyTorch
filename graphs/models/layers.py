@@ -1,7 +1,7 @@
 """
 coding=utf-8
 Definitions for custom layers and blocks
-Adapted from: https://github.com/ShichenLiu/CondenseNet/blob/master/layers.py
+Code adapted from: https://github.com/ShichenLiu/CondenseNet/blob/master/layers.py
 """
 import torch
 import torch.nn as nn
@@ -48,8 +48,8 @@ class LearnedGroupConv(nn.Module):
         return out_conv
 
     """
-    Sec 3.1: Condensation procedure: number of epochs for each condensing stage: M/2(C-1)
-    line 73: Sec 3.1: Condensation factor: allow each group to select R/C of inputs.
+    Paper: Sec 3.1: Condensation procedure: number of epochs for each condensing stage: M/2(C-1)
+    Paper: Sec 3.1: Condensation factor: allow each group to select R/C of inputs.
     - During training a fraction of (C−1)/C connections are removed after each of the C-1 condensing stages
     - we remove columns in Fg (by zeroing them out) if their L1-norm is small compared to the L1-norm of other columns.
     """
@@ -67,6 +67,7 @@ class LearnedGroupConv(nn.Module):
         if not self.reach_stage(stage):
             self.stage = stage
             delta = self.in_channels // self.condense_factor
+            print(delta)
         if delta > 0:
             self.drop(delta)
         return
@@ -74,15 +75,22 @@ class LearnedGroupConv(nn.Module):
     def drop(self, delta):
         weight = self.conv.weight * self.mask
         # Sum up all kernels
+        print(weight.size())
         assert weight.size()[-1] == 1
         weight = weight.abs().squeeze()
         assert weight.size()[0] == self.out_channels
         assert weight.size()[1] == self.in_channels
         d_out = self.out_channels // self.groups
-        # Shuffle weight
+        print(d_out.size())
+        # Shuffle weights
         weight = weight.view(d_out, self.groups, self.in_channels)
+        print(weight.size())
+
         weight = weight.transpose(0, 1).contiguous()
+        print(weight.size())
+
         weight = weight.view(self.out_channels, self.in_channels)
+        print(weight.size())
         # Sort and drop
         for i in range(self.groups):
             wi = weight[i * d_out:(i + 1) * d_out, :]

@@ -19,8 +19,6 @@ from utils.train_utils import adjust_learning_rate
 
 cudnn.benchmark = True
 
-#TODO #2: Group Lasso Loss
-#TODO #3: Count number of flops
 
 class CondenseNetAgent:
     """
