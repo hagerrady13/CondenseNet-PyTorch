@@ -1,9 +1,9 @@
 {
-  "exp_name": "exp_0",
+  "exp_name": "exp_13",
   "agent": "CondenseNetAgent",
   "mode": "train",
 
-  "cuda": 1,
+  "cuda": true,
   "seed": 1337,
 
   "img_size": 32,
