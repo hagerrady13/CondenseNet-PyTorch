@@ -164,7 +164,7 @@ class CondenseNetAgent:
             pred = self.model(x, progress)
             # loss
             cur_loss = self.loss(pred, y)
-            if np.isnan(float(cur_loss.cpu().data[0])):
+            if np.isnan(float(cur_loss.item())):
                 raise ValueError('Loss is nan during training...')
             # optimizer
             self.optimizer.zero_grad()
@@ -173,13 +173,9 @@ class CondenseNetAgent:
 
             top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
 
-            epoch_loss.update(cur_loss.data[0])
-            if self.cuda:
-                top1_acc.update(top1.cpu().numpy()[0], x.size(0))
-                top5_acc.update(top5.cpu().numpy()[0], x.size(0))
-            else:
-                top1_acc.update(top1.numpy()[0], x.size(0))
-                top5_acc.update(top5.numpy()[0], x.size(0))
+            epoch_loss.update(cur_loss.item())
+            top1_acc.update(top1.item(), x.size(0))
+            top5_acc.update(top5.item(), x.size(0))
 
             self.current_iteration += 1
             current_batch += 1
@@ -215,18 +211,13 @@ class CondenseNetAgent:
             pred = self.model(x)
             # loss
             cur_loss = self.loss(pred, y)
-            if np.isnan(float(cur_loss.data[0])):
-                raise ValueError('Loss is nan during training...')
+            if np.isnan(float(cur_loss.item())):
+                raise ValueError('Loss is nan during validation...')
 
             top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
-            epoch_loss.update(cur_loss.data[0])
-            if self.cuda:
-                top1_acc.update(top1.cpu().numpy()[0], x.size(0))
-                top5_acc.update(top5.cpu().numpy()[0], x.size(0))
-            else:
-                top1_acc.update(top1.numpy()[0], x.size(0))
-                top5_acc.update(top5.numpy()[0], x.size(0))
-
+            epoch_loss.update(cur_loss.item())
+            top1_acc.update(top1.item(), x.size(0))
+            top5_acc.update(top5.item(), x.size(0))
 
         print("Validation results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
             epoch_loss.avg) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))

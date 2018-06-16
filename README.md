@@ -62,9 +62,9 @@ To be able to reproduce the results from the official implementation, we use the
 | Top5 error   |    0.15%    |             |
 
 ### Requirements:
-- Pytorch: 0.3.1
-- torchvision: 0.2.0
-- tensorboardX: 1.1
+- Pytorch: 0.4.0
+- torchvision: 0.2.1
+- tensorboardX: 1.2
 
 ### ToDo:
 * Add network profiling for FLOPS counting
