@@ -1,5 +1,5 @@
 """
-This Project is created and authored by Hagar & Mo'men
+__author__ = "Hager Rady and Mo'men AbdelRazek"
 
 Main
 -Capture the config file

@@ -1,18 +1,18 @@
-# CondenseNet-Pytorch
+# CondenseNet-PyTorch
 
-A pytorch implementation of [CondenseNet: An Efficient DenseNet using Learned Group Convolutions](https://arxiv.org/pdf/1711.09224.pdf)
+A PyTorch implementation of [CondenseNet: An Efficient DenseNet using Learned Group Convolutions](https://arxiv.org/pdf/1711.09224.pdf)
 
 ### Project structure:
 ```
 ├── agents
-|  └── condensenet.py # the main training agent for the dcgan
+|  └── condensenet.py # the main training agent
 ├── graphs
 |  └── models
 |  |  └── condensenet.py
 |  |  └── denseblock.py
 |  |  └── layers.py
 |  └── losses
-|  |  └── loss.py # contains the binary cross entropy 
+|  |  └── loss.py # contains cross entropy loss definition
 ├── datasets  # contains all dataloaders for the project
 |  └── cifar10.py # dataloader for cifar10 dataset
 ├── data
@@ -20,14 +20,14 @@ A pytorch implementation of [CondenseNet: An Efficient DenseNet using Learned Gr
 ├── utils # utilities folder containing metrics , config parsing, etc
 |  └── assets
 ├── main.py
-├── run.sh
+└── run.sh
 ```
 
 ### Data:
 Dataloader is responsible for downloading (first time only) and preparing cifar10 data. 
 
 ### Model:
-To be able to reproduce the results from the official implementation, we use the default model of cifar10 and its configs as given [here](https://github.com/ShichenLiu/CondenseNet)
+To be able to reproduce the results from the official implementation, we use the default model of cifar10 and its configs as given [here](https://github.com/ShichenLiu/CondenseNet).
 
 | CondenseNet                | Feature map     |
 | -------------------------- |:---------------:|
@@ -51,7 +51,7 @@ To be able to reproduce the results from the official implementation, we use the
 - Growth Rate: [8, 16, 32]
 ```
 ### Usage:
-- To run the project, you need to add your configurations into the folder ```configs/``` as found here [here](https://github.com/hagerrady13/CondenseNet-Pytorch/blob/master/configs/condensenet_exp_0.json)
+- To run the project, you need to add your configurations into the folder ```configs/``` as found [here](https://github.com/hagerrady13/CondenseNet-Pytorch/blob/master/configs/condensenet_exp_0.json)
 - ``` sh run.sh ```
 - To run on a GPU, you need to enable cuda in the config file.
 
@@ -67,11 +67,11 @@ To be able to reproduce the results from the official implementation, we use the
 - tensorboardX: 1.2
 
 ### ToDo:
-* Add network profiling for FLOPS counting
+* Add network profiling for counting the number of FLOPS
 * Implement the condensation layers to optimize the model for inference
 
 ### References:
-* CondenseNet official implementation in Pytorch: https://github.com/ShichenLiu/CondenseNet
+* CondenseNet official implementation in PyTorch: https://github.com/ShichenLiu/CondenseNet
 
 ### License:
 This project is licensed under MIT License - see the LICENSE file for details.
