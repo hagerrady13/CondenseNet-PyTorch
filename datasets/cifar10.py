@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 import torch
 import torchvision.transforms as v_transforms
@@ -11,10 +12,11 @@ from torch.utils.data import DataLoader, TensorDataset, Dataset
 class Cifar10DataLoader:
     def __init__(self, config):
         self.config = config
+        self.logger = logging.getLogger("Cifar10DataLoader")
 
         if config.data_mode == "numpy_train":
 
-            print("Loading DATA.....")
+            self.logger.info("Loading DATA.....")
             normalize = v_transforms.Normalize(mean=[0.4914, 0.4824, 0.4467],
                                              std=[0.2471, 0.2435, 0.2616])
 
@@ -45,7 +47,7 @@ class Cifar10DataLoader:
 
             self.test_iterations = (self.len_test_data + self.config.batch_size - 1) // self.config.batch_size
 
-            print("""
+            self.logger.info("""
                 Some Statistics about the testing data
                 test_data shape: {}, type: {}
                 test_labels shape: {}, type: {}

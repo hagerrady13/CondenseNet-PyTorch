@@ -1,3 +1,6 @@
+"""
+Main Agent for CondenseNet
+"""
 import numpy as np
 
 from tqdm import tqdm
@@ -8,12 +11,14 @@ from torch import nn
 from torch.backends import cudnn
 from torch.autograd import Variable
 
+import logging
+
 from graphs.models.condensenet import CondenseNet
-from graphs.losses.loss import CrossEntropyLoss2d
+from graphs.losses.cross_entropy import CrossEntropyLoss2d
 from datasets.cifar10 import Cifar10DataLoader
 
 from tensorboardX import SummaryWriter
-from utils.metrics import AverageMeter, AverageMeterList, evaluate, cls_accuracy
+from utils.metrics import AverageMeter, AverageMeterList, cls_accuracy
 from utils.misc import print_cuda_statistics
 from utils.train_utils import adjust_learning_rate
 
@@ -21,15 +26,11 @@ cudnn.benchmark = True
 
 
 class CondenseNetAgent:
-    """
-    This class will be responsible for handling the whole process of our architecture.
-    """
-
     def __init__(self, config):
         self.config = config
+        self.logger = logging.getLogger("CondenseNetAgent")
         # Create an instance from the Model
         self.model = CondenseNet(self.config)
-        #print(self.model)
         # Create an instance from the data loader
         self.data_loader = Cifar10DataLoader(self.config)
         # Create instance from the loss
@@ -44,29 +45,26 @@ class CondenseNetAgent:
         self.current_epoch = 0
         self.current_iteration = 0
         self.best_valid_acc = 0
-
         # Check is cuda is available or not
         self.is_cuda = torch.cuda.is_available()
         # Construct the flag and make sure that cuda is available
         self.cuda = self.is_cuda & self.config.cuda
 
-        # Set the seed of torch
-        torch.manual_seed(self.config.seed)
-
         if self.cuda:
-            print("Operation will be on *****GPU-CUDA***** ")
+            self.device = torch.device("cuda")
             torch.cuda.manual_seed_all(self.config.seed)
+            torch.cuda.set_device(self.config.gpu_device)
+            self.logger.info("Operation will be on *****GPU-CUDA***** ")
             print_cuda_statistics()
-
-            # Get my models to run on CUD
-            self.model = self.model.cuda()
-            self.loss = self.loss.cuda()
         else:
-            print("Operation will be on *****CPU***** ")
+            self.device = torch.device("cpu")
+            torch.manual_seed(self.config.seed)
+            self.logger.info("Operation will be on *****CPU***** ")
 
+        self.model = self.model.to(self.device)
+        self.loss = self.loss.to(self.device)
         # Model Loading from the latest checkpoint if not found start from scratch.
         self.load_checkpoint(self.config.checkpoint_file)
-
         # Tensorboard Writer
         self.summary_writer = SummaryWriter(log_dir=self.config.summary_dir, comment='CondenseNet')
 
@@ -93,7 +91,7 @@ class CondenseNetAgent:
     def load_checkpoint(self, filename):
         filename = self.config.checkpoint_dir + filename
         try:
-            print("Loading checkpoint '{}'".format(filename))
+            self.logger.info("Loading checkpoint '{}'".format(filename))
             checkpoint = torch.load(filename)
 
             self.current_epoch = checkpoint['epoch']
@@ -101,11 +99,11 @@ class CondenseNetAgent:
             self.model.load_state_dict(checkpoint['state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer'])
 
-            print("Checkpoint loaded successfully from '{}' at (epoch {}) at (iteration {})\n"
+            self.logger.info("Checkpoint loaded successfully from '{}' at (epoch {}) at (iteration {})\n"
                   .format(self.config.checkpoint_dir, checkpoint['epoch'], checkpoint['iteration']))
         except OSError as e:
-            print("No checkpoint exists from '{}'. Skipping...".format(self.config.checkpoint_dir))
-            print("**First time to train**")
+            self.logger.info("No checkpoint exists from '{}'. Skipping...".format(self.config.checkpoint_dir))
+            self.logger.info("**First time to train**")
 
     def run(self):
         """
@@ -119,7 +117,7 @@ class CondenseNetAgent:
                 self.train()
 
         except KeyboardInterrupt:
-            print("You have entered CTRL+C.. Wait to finalize")
+            self.logger.info("You have entered CTRL+C.. Wait to finalize")
 
     def train(self):
         """
@@ -142,7 +140,6 @@ class CondenseNetAgent:
         # Initialize tqdm
         tqdm_batch = tqdm(self.data_loader.train_loader, total=self.data_loader.train_iterations,
                           desc="Epoch-{}-".format(self.current_epoch))
-
         # Set the model to be in training mode
         self.model.train()
         # Initialize your average meters
@@ -156,10 +153,12 @@ class CondenseNetAgent:
                 x, y = x.cuda(async=self.config.async_loading), y.cuda(async=self.config.async_loading)
 
             # current iteration over total iterations
-            progress = float(self.current_epoch * self.data_loader.train_iterations + current_batch) / (self.config.max_epoch * self.data_loader.train_iterations)
-            #progress = float(self.current_iteration) / (self.config.max_epoch * self.data_loader.train_iterations)
+            progress = float(self.current_epoch * self.data_loader.train_iterations + current_batch) / (
+                    self.config.max_epoch * self.data_loader.train_iterations)
+            # progress = float(self.current_iteration) / (self.config.max_epoch * self.data_loader.train_iterations)
             x, y = Variable(x), Variable(y)
-            lr = adjust_learning_rate(self.optimizer, self.current_epoch, self.config, batch=current_batch, nBatch= self.data_loader.train_iterations)
+            lr = adjust_learning_rate(self.optimizer, self.current_epoch, self.config, batch=current_batch,
+                                      nBatch=self.data_loader.train_iterations)
             # model
             pred = self.model(x, progress)
             # loss
@@ -171,7 +170,7 @@ class CondenseNetAgent:
             cur_loss.backward()
             self.optimizer.step()
 
-            top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
+            top1, top5 = cls_accuracy(pred.data, y.data, topk=(1, 5))
 
             epoch_loss.update(cur_loss.item())
             top1_acc.update(top1.item(), x.size(0))
@@ -184,7 +183,7 @@ class CondenseNetAgent:
             self.summary_writer.add_scalar("epoch/accuracy", top1_acc.val, self.current_iteration)
         tqdm_batch.close()
 
-        print("Training at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
+        self.logger.info("Training at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
             epoch_loss.val) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
 
     def validate(self):
@@ -214,12 +213,12 @@ class CondenseNetAgent:
             if np.isnan(float(cur_loss.item())):
                 raise ValueError('Loss is nan during validation...')
 
-            top1, top5 = cls_accuracy(pred.data, y.data, topk=(1,5))
+            top1, top5 = cls_accuracy(pred.data, y.data, topk=(1, 5))
             epoch_loss.update(cur_loss.item())
             top1_acc.update(top1.item(), x.size(0))
             top5_acc.update(top5.item(), x.size(0))
 
-        print("Validation results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
+        self.logger.info("Validation results at epoch-" + str(self.current_epoch) + " | " + "loss: " + str(
             epoch_loss.avg) + "- Top1 Acc: " + str(top1_acc.val) + "- Top5 Acc: " + str(top5_acc.val))
 
         tqdm_batch.close()
@@ -231,7 +230,7 @@ class CondenseNetAgent:
         Finalize all the operations of the 2 Main classes of the process the operator and the data loader
         :return:
         """
-        print("Please wait while finalizing the operation.. Thank you")
+        self.logger.info("Please wait while finalizing the operation.. Thank you")
         self.save_checkpoint()
         self.summary_writer.export_scalars_to_json("{}all_scalars.json".format(self.config.summary_dir))
         self.summary_writer.close()
