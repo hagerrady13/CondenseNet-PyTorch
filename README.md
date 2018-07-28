@@ -12,7 +12,7 @@ A PyTorch implementation of [CondenseNet: An Efficient DenseNet using Learned Gr
     - [Usage](#usage)
     - [Results](#results)
     - [Requirements](#requirements)
-    - [Future Work(#future-work)
+    - [Future Work](#future-work)
     - [References](#references)
     - [License](#license)
 
