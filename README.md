@@ -12,7 +12,7 @@ A PyTorch implementation of [CondenseNet: An Efficient DenseNet using Learned Gr
     - [Usage](#usage)
     - [Results](#results)
     - [Requirements](#requirements)
-    - [ToDo](#todo)
+    - [Future Work(#future-work)
     - [References](#references)
     - [License](#license)
 
@@ -82,7 +82,7 @@ To be able to reproduce the results from the official implementation, we use the
 
 Check [requirements.txt](https://github.com/hagerrady13/CondenseNet-PyTorch/blob/master/requirements.txt).
 
-### ToDo:
+### Future Work:
 * Add network profiling for counting the number of FLOPS
 * Implement the condensation layers to optimize the model for inference
 
